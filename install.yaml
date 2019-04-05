@@ -1,0 +1,69 @@
+- name: "Configure kernel for ElasticSearch"
+  hosts: nodes
+
+  tasks:
+  - name: Create file to tune ES for kernel
+    copy:
+      dest: /etc/sysctl.d/99-elasticsearch.conf
+      content: |
+        vm.max_map_count = 262144
+        }
+
+  - name: Apply ES tuning to kernel
+    sysctl:
+      name: vm.max_map_count
+      value: 262144
+      state: present
+
+- name: "Install Istio operator"
+  hosts: masters[0]
+
+  tasks:
+  - name: Check if istio-operator namespace exists
+    command: >-
+      oc get namespace istio-operator
+    register: get_istio_operator_namespace
+    changed_when: false
+    failed_when: false
+
+  - name: Create istio-operator namespace
+    shell: >-
+      oc new-project istio-operator
+    when: get_istio_operator_namespace.rc != 0
+
+  - name: Verify istio_product_operator objects exist
+    command: >-
+      oc get crd installations.istio.openshift.com -n istio-operator -o json
+    changed_when: false
+    failed_when: false
+    register: verify_istio_crd
+
+  - name: Copy istio_product_operator template
+    copy:
+      src: "files/istio_product_operator_template.yaml"
+      dest: /tmp/istio_product_operator_template.yaml
+    when: verify_istio_crd.rc != 0
+
+  - name: Create istio_product_operator template
+    shell: >-
+      oc new-app -n istio-operator -f /tmp/istio_product_operator_template.yaml --param=OPENSHIFT_ISTIO_MASTER_PUBLIC_URL={{ openshift_master_public_url }}
+    failed_when: false
+    when: verify_istio_crd.rc != 0
+
+  - name: Check if istio-system namespace exists
+    command: >-
+      oc get project istio-system
+    register: get_istio_system_namespace
+    changed_when: false
+    failed_when: false
+
+  - name: Copy istio-installation CRD
+    copy:
+      src: "files/istio-installation.yaml"
+      dest: /tmp/istio-installation.yaml
+
+  - name: Create istio-installation CRD
+    shell: >-
+      oc create -f /tmp/istio-installation.yaml -n istio-operator
+    when: get_istio_system_namespace.rc != 0
+
