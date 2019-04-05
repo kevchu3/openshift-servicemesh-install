@@ -1,5 +1,5 @@
-OpenShift Hostpath Examples
-===========================
+OpenShift Service Mesh
+======================
 
 The following instructions for OpenShift Service Mesh were taken from the OpenShift documentation and are intended to facilitate an installation:
 https://docs.openshift.com/container-platform/3.11/servicemesh-install/servicemesh-install.html
