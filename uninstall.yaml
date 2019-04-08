@@ -1,0 +1,39 @@
+- name: "Clean up Service Mesh resources"
+  hosts: masters[0]
+
+  tasks:
+  - name: Check if istio-system namespace exists
+    command: >-
+      oc get namespace istio-system
+    register: get_istio_system_namespace
+    changed_when: false
+    failed_when: false
+
+  - name: Clean up objects and delete istio-system namespace
+    command: >-
+      oc delete namespace istio-system
+    when: get_istio_system_namespace.rc == 0
+
+  - name: Check if istio-operator namespace exists
+    command: >-
+      oc get namespace istio-operator
+    register: get_istio_operator_namespace
+    changed_when: false
+    failed_when: false
+
+  - name: Clean up objects and delete istio-operator namespace
+    command: >-
+      oc delete namespace istio-operator
+    when: get_istio_operator_namespace.rc == 0
+
+  - name: Check if Istio Installation CRD exists
+    command: >-
+      oc get crd installations.istio.openshift.com
+    register: get_istio_crd_namespace
+    changed_when: false
+    failed_when: false
+
+  - name: Delete cluster-wide Service Mesh objects
+    command: >-
+      oc delete crd installations.istio.openshift.com
+    when: get_istio_crd_namespace.rc == 0
