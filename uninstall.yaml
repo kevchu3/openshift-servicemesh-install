@@ -26,14 +26,39 @@
       oc delete namespace istio-operator
     when: get_istio_operator_namespace.rc == 0
 
-  - name: Check if Istio Installation CRD exists
+  - name: Get CRDs that match Service Mesh labels
     command: >-
-      oc get crd installations.istio.openshift.com
-    register: get_istio_crd_namespace
+      oc get crd -l 'app in (istio-operator-job, kiali, istio-citadel, istio-pilot, mixer, istio-mixer)'
+    register: get_service_mesh_crd
     changed_when: false
     failed_when: false
 
-  - name: Delete cluster-wide Service Mesh objects
+  - name: Delete CRDs that match Service Mesh labels
     command: >-
-      oc delete crd installations.istio.openshift.com
-    when: get_istio_crd_namespace.rc == 0
+      oc delete crd -l 'app in (istio-operator-job, kiali, istio-citadel, istio-pilot, mixer, istio-mixer)'
+    when: get_service_mesh_crd.rc == 0 and get_service_mesh_crd.stdout != ""
+
+  - name: Check if ClusterRoleBinding for Service Mesh exists
+    command: >-
+      oc get clusterrolebinding istio-authenticated
+    register: get_cluster_role_binding
+    changed_when: false
+    failed_when: false
+
+  - name: Delete ClusterRoleBinding for Service Mesh
+    command: >-
+      oc delete clusterrolebinding istio-authenticated    
+    when: get_cluster_role_binding.rc == 0 and get_cluster_role_binding.stdout != ""
+
+  - name: Check if ClusterRole for Service Mesh exists
+    command: >-
+      oc get clusterrole istio-authenticated
+    register: get_cluster_role
+    changed_when: false
+    failed_when: false
+
+  - name: Delete ClusterRole for Service Mesh
+    command: >-
+      oc delete clusterrole istio-authenticated    
+    when: get_cluster_role.rc == 0 and get_cluster_role.stdout != ""
+
