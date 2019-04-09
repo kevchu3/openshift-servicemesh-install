@@ -33,9 +33,14 @@ In addition, `files/istio-installation.yaml` should be updated with the followin
 Deploy
 ------
 
-Run the `install.yaml` Ansible playbook:
+Run the `install.yaml` Ansible playbook to deploy the Service Mesh resources:
 ```
 ansible-playbook -i <inventory> install.yaml
+```
+
+Enable automatic sidecar injection with the `post-install.yaml` Ansible playbook:
+```
+ansible-playbook -i <inventory> post-install.yaml
 ```
 
 Uninstall

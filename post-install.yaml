@@ -1,0 +1,36 @@
+- name: "Enable automatic injection of Service Mesh sidecars"
+  hosts: masters
+
+  tasks:
+  - name: Check if master-config.patch exists
+    stat:
+      path: /tmp/master-config-patch-success
+    register: master_config_already_patched
+
+  - name: Copy master-config.patch file to masters
+    copy:
+      src: "files/master-config.patch"
+      dest: /etc/origin/master/master-config.patch
+    when: not master_config_already_patched.stat.exists
+
+  - name: Make copy of master-config.yaml file
+    shell: >-
+      cp -p /etc/origin/master/master-config.yaml /etc/origin/master/master-config.yaml.prepatch
+    when: not master_config_already_patched.stat.exists
+
+  - name: Apply patched changes to master-config.yaml
+    shell: >-
+      oc ex config patch /etc/origin/master/master-config.yaml.prepatch -p "$(cat /etc/origin/master/master-config.patch)" > /etc/origin/master/master-config.yaml
+    when: not master_config_already_patched.stat.exists
+    register: master_config_patched
+
+  - name: Create patch success file for idempotency
+    file:
+      path: /tmp/master-config-patch-success
+      state: touch
+    when: master_config_patched.changed == true
+
+  - name: Restart master api and controller services
+    shell: >-
+      /usr/local/bin/master-restart api && /usr/local/bin/master-restart controllers
+    when: master_config_patched.changed == true
