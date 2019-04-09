@@ -15,18 +15,35 @@ Setup
 -----
 
 The following Ansible variables should be defined:
-
 ```
 openshift_master_public_url=<your master public url>
+```
+
+In addition, `files/istio-installation.yaml` should be updated with the following parameters provided by the user:
+```
+  launcher:
+    openshift:
+      user: user
+      password: password
+    github:
+      username: username
+      token: token
 ```
 
 Deploy
 ------
 
-Run the `install.yaml` Ansible playbook
-
+Run the `install.yaml` Ansible playbook:
 ```
 ansible-playbook -i <inventory> install.yaml
+```
+
+Uninstall
+---------
+
+Run the `uninstall.yaml` Ansible playbook:
+```
+ansible-playbook -i <inventory> uninstall.yaml
 ```
 
 License
