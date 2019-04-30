@@ -31,22 +31,22 @@
       oc new-project istio-operator
     when: get_istio_operator_namespace.rc != 0
 
-  - name: Verify istio_product_operator objects exist
+  - name: Verify servicemesh-operator objects exist
     command: >-
       oc get crd installations.istio.openshift.com -n istio-operator -o json
     changed_when: false
     failed_when: false
     register: verify_istio_crd
 
-  - name: Copy istio_product_operator template
+  - name: Copy servicemesh-operator template
     copy:
-      src: "files/istio_product_operator_template.yaml"
-      dest: /tmp/istio_product_operator_template.yaml
+      src: "files/servicemesh-operator.yaml"
+      dest: /tmp/servicemesh-operator.yaml
     when: verify_istio_crd.rc != 0
 
-  - name: Create istio_product_operator template
+  - name: Create servicemesh-operator template
     shell: >-
-      oc new-app -n istio-operator -f /tmp/istio_product_operator_template.yaml --param=OPENSHIFT_ISTIO_MASTER_PUBLIC_URL={{ openshift_master_public_url }}
+      oc apply -n istio-operator -f /tmp/servicemesh-operator.yaml
     failed_when: false
     when: verify_istio_crd.rc != 0
 
@@ -57,13 +57,24 @@
     changed_when: false
     failed_when: false
 
+  - name: Create istio-operator namespace
+    shell: >-
+      oc new-project istio-system
+    when: get_istio_system_namespace.rc != 0
+
   - name: Copy istio-installation CRD
     copy:
       src: "files/istio-installation.yaml"
       dest: /tmp/istio-installation.yaml
 
+  - name: Check if basic-install controlplane CRD exists
+    command: >-
+      oc get controlplanes basic-install
+    register: get_controlplane_crd
+    changed_when: false
+    failed_when: false
+
   - name: Create istio-installation CRD
     shell: >-
-      oc create -f /tmp/istio-installation.yaml -n istio-operator
-    when: get_istio_system_namespace.rc != 0
-
+      oc create -f /tmp/istio-installation.yaml -n istio-system
+    when: get_controlplane_crd.rc != 0

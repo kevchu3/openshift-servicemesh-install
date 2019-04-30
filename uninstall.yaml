@@ -28,15 +28,20 @@
 
   - name: Get CRDs that match Service Mesh labels
     command: >-
-      oc get crd -l 'app in (istio-operator-job, kiali, istio-citadel, istio-pilot, mixer, istio-mixer)'
+      oc get crd -l 'app in (istio-operator-job, kiali, istio-citadel, istio-pilot, mixer, istio-mixer, certmanager)'
     register: get_service_mesh_crd
     changed_when: false
     failed_when: false
 
   - name: Delete CRDs that match Service Mesh labels
     command: >-
-      oc delete crd -l 'app in (istio-operator-job, kiali, istio-citadel, istio-pilot, mixer, istio-mixer)'
+      oc delete crd -l 'app in (istio-operator-job, kiali, istio-citadel, istio-pilot, mixer, istio-mixer, certmanager)'
     when: get_service_mesh_crd.rc == 0 and get_service_mesh_crd.stdout != ""
+
+  - name: Delete controlplanes and installations CRD
+    command: >-
+      oc delete crd controlplanes.istio.openshift.com installations.istio.openshift.com
+    failed_when: false
 
   - name: Check if ClusterRoleBinding for Service Mesh exists
     command: >-

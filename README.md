@@ -14,21 +14,7 @@ Requirements
 Setup
 -----
 
-The following Ansible variables should be defined:
-```
-openshift_master_public_url=<your master public url>
-```
-
-In addition, `files/istio-installation.yaml` should be updated with the following parameters provided by the user:
-```
-  launcher:
-    openshift:
-      user: user
-      password: password
-    github:
-      username: username
-      token: token
-```
+Review `files/istio-installation.yaml` and update as necessary with parameters provided by the user, see documentation for configuration.
 
 Deploy
 ------

@@ -1,47 +1,58 @@
-apiVersion: "istio.openshift.com/v1alpha1"
-kind: "Installation"
+apiVersion: istio.openshift.com/v1alpha3
+kind: ControlPlane
 metadata:
-  name: "istio-installation"
+  name: basic-install
 spec:
-  deployment_type: openshift
-  istio:
-    authentication: true
-    community: false
-    prefix: openshift-istio-tech-preview/
-    version: 0.10.0
-  jaeger:
-    prefix: distributed-tracing-tech-preview/
-    version: 1.11.0
-    elasticsearch_memory: 1Gi
-  kiali:
-    username: username
-    password: password
-    prefix: openshift-istio-tech-preview/
-    version: 0.16.2
   launcher:
-    openshift:
-      user: user
-      password: password
-    github:
-      username: username
-      token: token
-    catalog:
-      filter: booster.mission.metadata.istio
-      branch: v97
-      repo: https://github.com/fabric8-launcher/launcher-booster-catalog.git
+    enabled: false
+
   threeScale:
     enabled: false
-    prefix: openshift-istio-tech-preview/
-    version: 0.5.0
-    adapter:
-      listenAddr: 3333
-      logLevel: info
-      logJSON: true
-      reportMetrics: true
-      metricsPort: 8080
-      cacheTTLSeconds: 300
-      cacheRefreshSeconds: 180
-      cacheEntriesMax: 1000
-      cacheRefreshRetries: 1
-      allowInsecureConn: false
-      clientTimeoutSeconds: 10
+
+  istio:
+    global:
+      hub: openshift-istio-tech-preview
+      tag: 0.10.0
+      proxy:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 128Mi
+
+    gateways:
+      istio-egressgateway:
+        autoscaleEnabled: false
+      istio-ingressgateway:
+        autoscaleEnabled: false
+        ior_enabled: false
+
+    mixer:
+      policy:
+        autoscaleEnabled: false
+
+      telemetry:
+        autoscaleEnabled: false
+        resources:
+          requests:
+            cpu: 100m
+            memory: 1G
+          limits:
+            cpu: 500m
+            memory: 4G
+
+    pilot:
+      autoscaleEnabled: false
+      traceSampling: 100.0
+
+    kiali:
+      hub: kiali
+      tag: v0.16.2
+      dashboard:
+        user: admin
+        passphrase: admin
+
+    tracing:
+      enabled: true
