@@ -1,18 +1,15 @@
-apiVersion: istio.openshift.com/v1alpha3
-kind: ControlPlane
+apiVersion: maistra.io/v1
+kind: ServiceMeshControlPlane
 metadata:
   name: basic-install
-spec:
-  launcher:
-    enabled: false
 
   threeScale:
     enabled: false
 
   istio:
     global:
-      hub: openshift-istio-tech-preview
-      tag: 0.10.0
+      hub: registry.redhat.io/openshift-istio-tech-preview/
+      tag: 0.12.0
       proxy:
         resources:
           requests:
@@ -21,12 +18,23 @@ spec:
           limits:
             cpu: 500m
             memory: 128Mi
+      multitenant: true
+      mtls:
+        enabled: false
+      disablePolicyChecks: true
+      policyCheckFailOpen: false
+      imagePullSecrets:
+        - MyPullSecret
 
     gateways:
       istio-egressgateway:
         autoscaleEnabled: false
+        autoscaleMin: 1
+        autoscaleMax: 5
       istio-ingressgateway:
         autoscaleEnabled: false
+        autoscaleMin: 1
+        autoscaleMax: 5
         ior_enabled: false
 
     mixer:
@@ -38,21 +46,28 @@ spec:
         resources:
           requests:
             cpu: 100m
-            memory: 1G
+            memory: 500m
           limits:
             cpu: 500m
             memory: 4G
 
     pilot:
+      resources:
+        requests:
+          cpu: 100m
       autoscaleEnabled: false
       traceSampling: 100.0
 
     kiali:
-      hub: kiali
-      tag: v0.16.2
+      enabled: true
+      tag: v1.0.0
       dashboard:
         user: admin
         passphrase: admin
 
     tracing:
       enabled: true
+      jaeger:
+        tag: 1.13.1
+        template: all-in-one
+        agentStrategy: DaemonSet

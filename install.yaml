@@ -15,6 +15,76 @@
       value: 262144
       state: present
 
+# https://access.redhat.com/documentation/en-us/openshift_container_platform/3.11/html/service_mesh_install/service-mesh-installation#installing-service-mesh
+- name: "Install Jaeger and Kiali operators as prereq to installing Service Mesh"
+  hosts: masters[0]
+
+  tasks:
+  - name: Check if observability namespace exists
+    command: >-
+      oc get namespace observability
+    register: get_observability_namespace
+    changed_when: false
+    failed_when: false
+
+  - name: Create observability namespace
+    shell: >-
+      oc new-project observability
+    when: get_observability_namespace.rc != 0
+
+  - name: Create jaeger CRD
+    command: >-
+      oc create -n observability -f https://raw.githubusercontent.com/jaegertracing/jaeger-operator/v1.13.1/deploy/crds/jaegertracing_v1_jaeger_crd.yaml
+    failed_when: false
+    when: get_observability_namespace.rc != 0
+
+  - name: Create jaeger service account
+    command: >-
+      oc create -n observability -f https://raw.githubusercontent.com/jaegertracing/jaeger-operator/v1.13.1/deploy/service_account.yaml
+    failed_when: false
+    when: get_observability_namespace.rc != 0
+
+  - name: Create jaeger service role
+    command: >-
+      oc create -n observability -f https://raw.githubusercontent.com/jaegertracing/jaeger-operator/v1.13.1/deploy/role.yaml
+    failed_when: false
+    when: get_observability_namespace.rc != 0
+
+  - name: Create jaeger service role binding
+    command: >-
+      oc create -n observability -f https://raw.githubusercontent.com/jaegertracing/jaeger-operator/v1.13.1/deploy/role_binding.yaml
+    failed_when: false
+    when: get_observability_namespace.rc != 0
+
+  - name: Install jaeger service operator
+    command: >-
+      oc create -n observability -f https://raw.githubusercontent.com/jaegertracing/jaeger-operator/v1.13.1/deploy/operator.yaml
+    failed_when: false
+    when: get_observability_namespace.rc != 0
+
+  - name: Check if kiali-operator namespace exists
+    command: >-
+      oc get namespace kiali-operator
+    register: get_kiali_operator_namespace
+    changed_when: false
+    failed_when: false
+
+  - name: Create kiali-operator namespace
+    shell: >-
+      oc new-project kiali-operator
+    when: get_kiali_operator_namespace.rc != 0
+
+  - name: Copy kiali-operator template
+    copy:
+      src: "files/deploy-kiali-operator.sh"
+      dest: /tmp/deploy-kiali-operator.sh
+    when: get_kiali_operator_namespace.rc != 0
+
+  - name: Install Kiali operator
+    shell: >-
+      bash /tmp/deploy-kiali-operator.sh --operator-image-version latest --operator-watch-namespace '**' --accessible-namespaces '**' --operator-install-kiali false
+    when: get_kiali_operator_namespace.rc != 0
+
 - name: "Install Istio operator"
   hosts: masters[0]
 
@@ -38,15 +108,9 @@
     failed_when: false
     register: verify_istio_crd
 
-  - name: Copy servicemesh-operator template
-    copy:
-      src: "files/servicemesh-operator.yaml"
-      dest: /tmp/servicemesh-operator.yaml
-    when: verify_istio_crd.rc != 0
-
   - name: Create servicemesh-operator template
     shell: >-
-      oc apply -n istio-operator -f /tmp/servicemesh-operator.yaml
+      oc apply -n istio-operator -f https://raw.githubusercontent.com/Maistra/istio-operator/maistra-0.12/deploy/servicemesh-operator.yaml
     failed_when: false
     when: verify_istio_crd.rc != 0
 
