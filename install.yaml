@@ -82,7 +82,7 @@
 
   - name: Install Kiali operator
     shell: >-
-      bash /tmp/deploy-kiali-operator.sh --operator-image-version latest --operator-watch-namespace '**' --accessible-namespaces '**' --operator-install-kiali false
+      bash /tmp/deploy-kiali-operator.sh --operator-image-version v1.3.1 --operator-version-label v1.3 --kiali-image-version v1.3.1 --operator-watch-namespace '**' --accessible-namespaces '**' --operator-install-kiali false
     when: get_kiali_operator_namespace.rc != 0
 
 - name: "Install Istio operator"
